@@ -5,12 +5,12 @@ const CandleComponent = () => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Candle video URL - using a creative commons licensed GIF of a flickering candle
-  const candleVideoUrl = 'https://media.giphy.com/media/3o7qDJKIO5rSeyHhvO/giphy.gif';
+  // Static candle image URL (using a free image of a lit candle)
+  const candleImageUrl = 'https://images.unsplash.com/photo-1603096885934-fc4430e9a4a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
 
   useEffect(() => {
     const img = new Image();
-    img.src = candleVideoUrl;
+    img.src = candleImageUrl;
     img.onload = () => setLoaded(true);
     img.onerror = (e) => {
       console.error('Failed to load candle image:', e);
@@ -41,8 +41,8 @@ const CandleComponent = () => {
         </div>
       )}
       <img 
-        src={candleVideoUrl}
-        alt="Flickering memorial candle"
+        src={candleImageUrl}
+        alt="Memorial candle"
         className={`object-cover max-h-full max-w-full transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-40"></div>
