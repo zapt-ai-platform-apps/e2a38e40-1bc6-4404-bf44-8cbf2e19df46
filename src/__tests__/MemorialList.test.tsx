@@ -6,27 +6,26 @@ import MemorialList from '../components/Memorial/MemorialList';
 // Mock timers for testing auto-rotation
 vi.useFakeTimers();
 
-// Sample deceased data for testing
-const mockDeceasedData = [
-  {
-    id: 1,
-    name: 'John Doe',
-    dateOfDeath: '2020-01-15T00:00:00.000Z',
-    description: 'Beloved father and husband'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    dateOfDeath: '2021-03-22T00:00:00.000Z',
-    description: 'Caring mother and friend'
-  },
-  {
-    id: 3,
-    name: 'Robert Johnson',
-    dateOfDeath: '2019-07-10T00:00:00.000Z',
-    description: 'Devoted grandfather'
+// Create 40 sample deceased entries for testing (to create 2 slides of 20 each)
+const generateMockDeceasedData = (count = 40) => {
+  const data = [];
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  for (let i = 1; i <= count; i++) {
+    const day = Math.min(i, 28); // Ensure valid day for all months
+    data.push({
+      id: i,
+      name: `Person ${i}`,
+      dateOfDeath: new Date(currentYear, currentMonth, day).toISOString(),
+      description: `Description for person ${i}`
+    });
   }
-];
+  
+  return data;
+};
+
+const mockDeceasedData = generateMockDeceasedData();
 
 describe('MemorialList', () => {
   beforeEach(() => {
@@ -37,12 +36,16 @@ describe('MemorialList', () => {
     vi.clearAllTimers();
   });
 
-  it('renders all memorial plaques in the DOM', () => {
+  it('renders memorial plaques in groups of 20', () => {
     render(<MemorialList deceased={mockDeceasedData} />);
     
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-    expect(screen.getByText('Robert Johnson')).toBeInTheDocument();
+    // Check that the first person in the list is rendered
+    expect(screen.getByText('Person 1')).toBeInTheDocument();
+    
+    // With 40 items and 20 per slide, we should have 2 slide groups
+    const slider = screen.getByTestId('memorial-slider');
+    const indicators = screen.getAllByRole('button', { name: /go to slide group/i });
+    expect(indicators).toHaveLength(2);
   });
 
   it('shows the heading "In Loving Memory"', () => {
@@ -50,7 +53,7 @@ describe('MemorialList', () => {
     expect(screen.getByText('In Loving Memory')).toBeInTheDocument();
   });
 
-  it('advances to the next slide after 10 seconds', async () => {
+  it('advances to the next slide group after 10 seconds', async () => {
     render(<MemorialList deceased={mockDeceasedData} />);
     
     // Get the slider element
@@ -69,16 +72,6 @@ describe('MemorialList', () => {
       expect(slider.getAttribute('data-current-index')).toBe('1');
     });
     
-    // Advance time by another 10 seconds
-    act(() => {
-      vi.advanceTimersByTime(10000);
-    });
-    
-    // Now the currentIndex should be 2
-    await waitFor(() => {
-      expect(slider.getAttribute('data-current-index')).toBe('2');
-    });
-    
     // Advance time by another 10 seconds - should wrap back to 0
     act(() => {
       vi.advanceTimersByTime(10000);
@@ -88,5 +81,20 @@ describe('MemorialList', () => {
     await waitFor(() => {
       expect(slider.getAttribute('data-current-index')).toBe('0');
     });
+  });
+  
+  it('works correctly with fewer than one slide worth of items', () => {
+    // Test with only 5 items which is less than one full slide
+    const smallDataset = mockDeceasedData.slice(0, 5);
+    render(<MemorialList deceased={smallDataset} />);
+    
+    // Should still show the slider with one slide
+    const slider = screen.getByTestId('memorial-slider');
+    expect(slider).toBeInTheDocument();
+    expect(slider.getAttribute('data-current-index')).toBe('0');
+    
+    // Should have only one navigation indicator
+    const indicators = screen.queryAllByRole('button', { name: /go to slide group/i });
+    expect(indicators).toHaveLength(1);
   });
 });
